@@ -4,9 +4,9 @@
 
 ## 成片示例
 
-<a href="references/approved-pvc-cover.png"><img src="references/approved-pvc-cover.png" width="320" alt="特徕福PVC卡定制 A 版封面"></a>
+<a href="references/approved-cover.png"><img src="references/approved-cover.png" width="320" alt="特徕福招牌搭对料 A 版封面"></a>
 
-这张封面以夜景门店为主图、白天门店为副图，贴纸抽中「专属卡片」。[查看这张封面的制作记录](references/approved-pvc-workflow.md)。
+这张封面以夜景门店为主图、白天门店为副图，贴纸为「招牌对料」，标题放大铺满顶部且金笔刷可见。[查看这张封面的制作记录](references/approved-workflow.md)。
 
 ## 安装
 

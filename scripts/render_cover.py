@@ -334,6 +334,13 @@ def render(request, out):
     headline_bottom = request.get("headline_bottom", 419)
     if not isinstance(headline_bottom, int) or not 0 <= headline_bottom <= CANVAS[1]:
         raise ValueError("headline_bottom must be an integer within the canvas height.")
+    # Gold brush stroke placement. When the headline is enlarged/lowered, the
+    # default brush position falls behind the title and disappears; move it down
+    # so its thick end sticks out below the second line, as in the reference.
+    gold_brush_pos = request.get("gold_brush_pos", [548, 342])
+    if (not isinstance(gold_brush_pos, list) or len(gold_brush_pos) != 2
+            or any(not isinstance(v, int) for v in gold_brush_pos)):
+        raise ValueError("gold_brush_pos must be two integers [x, y].")
 
     group = fixed_collage(photos, focus, modes)
     place_sticker(group, sticker)
@@ -346,7 +353,7 @@ def render(request, out):
             group.alpha_composite(headline, (98, 145))
     else:
         with Image.open(ASSETS / "gold-brush.png") as brush:
-            group.alpha_composite(brush, (548, 342))
+            group.alpha_composite(brush, tuple(gold_brush_pos))
         if custom_artwork is not None:
             headline = open_headline(Path(custom_artwork), headline_max)
         elif cached_artwork:
