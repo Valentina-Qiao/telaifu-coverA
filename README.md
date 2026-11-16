@@ -31,9 +31,9 @@ git clone https://github.com/Valentina-Qiao/telaifu-coverA.git (Join-Path $skill
 
 ## 工作流程
 
-1. 用 ImageGen 按[字形参考](assets/headline-style-reference.png)生成透明主标题层，逐字核对。随包字稿可直接复用。
+1. 用 ImageGen 按[字形参考](assets/headline-style-reference.png)在**纯绿幕背景 RGB(0,255,0)** 上生成主标题，逐字核对，再用 `scripts/key_green.py` 抠成透明 PNG。ImageGen 无法输出真实透明，直接请求「透明背景」会得到棋盘格图并残留灰楔/斑点，务必走绿幕流程。随包字稿可直接复用。
 2. 从标题提炼贴题的四字候选，由脚本随机选出一个，或使用你指定的短语。
-3. 把标题、贴纸和原照片合成到固定模板中，按可见内容垂直居中。调整取景时复用已确认的标题和贴纸。
+3. 把标题、贴纸和原照片合成到固定模板中，按可见内容垂直居中。调整取景时复用已确认的标题和贴纸。标题偏小时可用 `headline_max_size`、`headline_bottom` 参数放宽，见 [SKILL.md](SKILL.md#标题尺寸避免标题偏小)。
 4. 检查成片的文字、照片主体及上下留白，导出 PNG。
 
 本地合成需要带 Pillow 和 NumPy 的 Python。直接运行脚本时，请参考 [SKILL.md 中的渲染参数](SKILL.md#渲染参数)。

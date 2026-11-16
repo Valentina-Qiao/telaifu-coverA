@@ -16,8 +16,32 @@ description: 制作特徕福信息流 A 版封面。用户说“制作特徕福�
 ## 生成主标题层
 
 - 给 ImageGen 输入 [主标题字形参考](assets/headline-style-reference.png)。按用户原文写清每一行，有英文缩写时列出字母及大小写。标题以「特徕福」开头时，照图将前三个字放大在左，业务文字放右侧，下一行往右下收紧。字势略向右上扬，笔画用胖圆手写造型，字腔清晰，字面为奶油白，下边缘为琥珀橙立体倒角。
-- 设置真实透明背景，输出只含整组标题字稿。用 PNG 的 Alpha 通道检查透明度，逐字核对「徕」、复杂字偏旁和英文字母，检查标题边沿是否裁切。有错字或风格偏差时带同一张字形参考重试。保存通过核对的标题层供本次合成和复调使用。
+- **一律用绿幕生成，不要请求「透明背景」。** 内置 ImageGen 无法输出真实 Alpha：请求 transparent 只会得到内嵌棋盘格的 RGB 图，后续键控会残留灰色楔形和斑点，反复返工。正确做法见下方「绿幕生成与抠图（必做）」。
+- 逐字核对「徕」、复杂字偏旁和英文字母，检查标题边沿是否裁切。有错字或风格偏差时带同一张字形参考重试。保存通过核对的透明标题层供本次合成和复调使用。
 - 用户指定具体模型版本时，按实际可用的模型选择能力处理。使用内置 ImageGen 时如无法指定或确认版本，向用户说明实际调用方式。
+
+## 绿幕生成与抠图（必做）
+
+新标题默认走这条路径，避免透明背景与抠图缺陷。
+
+1. **提示词要求纯绿幕。** 在标题提示词里明确写：背景为平整、均匀、纯色绿幕 RGB(0,255,0)，无渐变、无棋盘格、无噪点；字面纯净实心，无斑点/杂色/纹理。仍然要求圆润手写造型、奶油白字面、琥珀橙立体倒角、字间留白。图生图时把字形参考作为输入图并提高保真度。
+2. **色度键抠图。** 用随包 [key_green.py](scripts/key_green.py)，它会把所有「亮且非绿」的像素强制全不透明，只把真正的绿幕变透明，并清理水印与杂点：
+
+   ~~~powershell
+   & $pythonPath "$skillDir/scripts/key_green.py" --input "$greenPng" --output "$transparentPng" --diag "$diagPng"
+   ~~~
+
+   `--diag` 是叠在洋红底上的检查图，用来看字间是否通透、字面是否有洞。默认阈值已验收；只有生成图偏色时才调 `--green-lo/--green-hi/--bright`。检查输出的 `opaque_frac` 与透明检查图，确认字间透明、字面实心无洞后，把透明 PNG 的绝对路径写入 `headline_image`。
+3. **切勿用「填充内部空洞」式抠图。** 那会把字与字之间的空隙当成字形填实，在第两行形成灰色楔形；也切勿用渐变 alpha 覆盖奶油字，否则在深色星空上会透出深灰斑点。这两类缺陷都只能靠绿幕 + 强制不透明字面从源头避免。
+
+## 标题尺寸（避免标题偏小）
+
+`render_cover.py` 默认把标题限制在 866×272、底边 y=419。若用户给出标题应占区域的参照（如红框）并反馈标题偏小，用渲染参数放宽，无需改脚本或复制副本：
+
+- `headline_max_size`: [宽, 高度] 两个正整数，标题缩放的上限框，保持原比例。要铺满顶部区域可取 [980, 350]。
+- `headline_bottom`: 标题底边的 y 坐标，整数。下移/上移标题用这个调。
+
+放大标题后脚本会按可见边界自动等比缩小整个内容组以适配安全区，属正常；检查日志 `top_px`/`bottom_px` 仍均衡（如 160/160）即可。不要为追求更大而无限放大，否则照片会被连带缩小。
 
 ## 固定版式
 
@@ -29,18 +53,20 @@ description: 制作特徕福信息流 A 版封面。用户说“制作特徕福�
 
 ~~~json
 {
-  "title": "特徕福PVC卡\n定制",
-  "headline_image": "F:/work/pvc-title.png",
-  "sticker_candidates": ["卡片定制", "定制卡片", "专属卡片"],
+  "title": "特徕福招牌搭对料\n客源忘不了",
+  "headline_image": "F:/work/headline_transparent.png",
+  "sticker_candidates": ["招牌搭料", "客源不忘", "招牌对料"],
   "photos": ["F:/photos/main.jpg", "F:/photos/detail.jpg"],
-  "focus": [[0.5, 0.42], [0.5, 0.48]],
-  "fit": ["cover", "cover"]
+  "focus": [[0, 0.5], [0.55, 0.5]],
+  "fit": ["cover", "cover"],
+  "headline_max_size": [980, 350],
+  "headline_bottom": 460
 }
 ~~~
 
-`focus` 和 `fit` 可省略。两组 `focus` 数值分别控制上框和下框，横竖方向从 0 到 1 对应左到右、上到下。`cover` 填满相框，`contain` 显示照片全幅。
+`focus`、`fit`、`headline_max_size`、`headline_bottom` 可省略（省略时用默认值）。两组 `focus` 数值分别控制上框和下框，横竖方向从 0 到 1 对应左到右、上到下。`cover` 填满相框，`contain` 显示照片全幅。
 
-`headline_image` 接收检查通过的透明 RGBA PNG 绝对路径。使用随包字稿时可省略。
+`headline_image` 接收检查通过的透明 RGBA PNG 绝对路径（由绿幕抠图得到）。使用随包字稿时可省略。
 
 ~~~powershell
 & $pythonPath "$skillDir/scripts/render_cover.py" --request "$requestPath" --output "$outputPath"

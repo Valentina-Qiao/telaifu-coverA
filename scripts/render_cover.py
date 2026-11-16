@@ -297,7 +297,7 @@ def fixed_collage(paths, focus, modes):
     return layer
 
 
-def open_headline(path):
+def open_headline(path, max_size=(866, 272)):
     with Image.open(path) as artwork:
         if artwork.format != "PNG" or artwork.mode != "RGBA":
             raise ValueError("Headline artwork must be an RGBA PNG.")
@@ -308,7 +308,7 @@ def open_headline(path):
         if bounds is None:
             raise ValueError("Headline artwork has no visible lettering.")
         heading = artwork.crop(bounds)
-    return ImageOps.contain(heading, (866, 272), RESAMPLE)
+    return ImageOps.contain(heading, tuple(max_size), RESAMPLE)
 
 
 def render(request, out):
@@ -325,6 +325,15 @@ def render(request, out):
     if len(focus) != 2 or any(len(p) != 2 or any(not 0 <= v <= 1 for v in p) for p in focus):
         raise ValueError("focus must contain two pairs of coordinates from 0 to 1.")
     sticker = sticker_text(request)
+    # Headline sizing: defaults preserved; allow a larger headline to fill the
+    # top frame. headline_bottom is the y of the headline's bottom edge.
+    headline_max = request.get("headline_max_size", [866, 272])
+    if (not isinstance(headline_max, list) or len(headline_max) != 2
+            or any(not isinstance(v, int) or v <= 0 for v in headline_max)):
+        raise ValueError("headline_max_size must be two positive integers [width, height].")
+    headline_bottom = request.get("headline_bottom", 419)
+    if not isinstance(headline_bottom, int) or not 0 <= headline_bottom <= CANVAS[1]:
+        raise ValueError("headline_bottom must be an integer within the canvas height.")
 
     group = fixed_collage(photos, focus, modes)
     place_sticker(group, sticker)
@@ -339,13 +348,13 @@ def render(request, out):
         with Image.open(ASSETS / "gold-brush.png") as brush:
             group.alpha_composite(brush, (548, 342))
         if custom_artwork is not None:
-            headline = open_headline(Path(custom_artwork))
+            headline = open_headline(Path(custom_artwork), headline_max)
         elif cached_artwork:
-            headline = open_headline(ASSETS / cached_artwork)
+            headline = open_headline(ASSETS / cached_artwork, headline_max)
         else:
             headline = lettering(title)
         group.alpha_composite(headline, ((CANVAS[0] - headline.width) // 2,
-                                         419 - headline.height))
+                                         headline_bottom - headline.height))
     # Measure all nonempty foreground layers together, excluding only the faint
     # outside edge of the shadow. Then fit and position the combined artwork.
     meaningful = group.getchannel("A").point(lambda a: 255 if a >= 24 else 0).getbbox()
