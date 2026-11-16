@@ -1,0 +1,6 @@
+interface:
+  display_name: "特徕福信息流 A 版封面"
+  short_description: "按参考图制作特徕福竖版封面，从标题提炼四字主题贴纸"
+  default_prompt: "使用 $telaifu-coverA 制作特徕福信息流 A 版封面，标题和配图见本条消息。"
+policy:
+  allow_implicit_invocation: true
